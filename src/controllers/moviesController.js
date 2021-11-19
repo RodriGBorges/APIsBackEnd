@@ -4,6 +4,7 @@ const sequelize = db.sequelize;
 const { Op } = require("sequelize");
 const moment = require('moment');
 const fetch = require('node-fetch');
+const axios = require('axios')
 
 
 //Aqui tienen otra forma de llamar a cada uno de los modelos
@@ -57,7 +58,36 @@ const moviesController = {
     },
     //Aqui debo modificar para crear la funcionalidad requerida
     'buscar': (req, res) => {
-        
+        Movies.findAll({
+            where: {
+                title: {
+                    [Op.substring]: `%${req.body.titulo}%`
+                }
+            }
+            })
+            .then(movies => {
+
+                if (movies.length) {
+                    res.render('moviesList', {movies})
+
+                } else {
+                    fetch(`http://www.omdbapi.com?apikey=d4e35e92&t=${req.body.titulo}`)
+                    .then(response => response.json())
+                    .then(movie => {
+
+                        if (movie.Response === "True") {
+                            res.render('moviesDetailOmdb', {movie})
+                        } else {
+                            res.status(404).send("La peli no existe.")
+                        }
+
+                    })
+                    .catch(error => res.send(error))
+
+                }
+
+            })
+            .catch(error => res.send(error))
     },
     //Aqui dispongo las rutas para trabajar con el CRUD
     add: function (req, res) {
